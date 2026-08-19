@@ -1,0 +1,75 @@
+Pricing Intelligence Agent — Architecture
+=========================================
+
+Data Layer
+----------
+[data/generate_data.py]
+  • Generates 800 SKUs × 26 weeks = 20,800 rows of synthetic pricing data
+  • Bakes in realistic log-log demand elasticity per category
+  • Outputs: data/pricing_data.csv
+        |
+        v
+Analysis Layer
+--------------
+[analysis/elasticity.py]
+  • Reads pricing_data.csv
+  • Fits log(units_sold) ~ log(your_price) per category via OLS (statsmodels)
+  • Outputs: {category: elasticity_coefficient}  (cached in-memory)
+        |
+        v
+[analysis/recommend.py]
+  • For a given SKU, reads latest week of data
+  • Computes: elasticity, competitor_gap, margin
+  • Applies decision rules → direction (raise/lower/hold) + change_pct
+  • Enforces 10% margin floor on suggested price
+  • Outputs: structured recommendation dict
+        |
+        v
+LLM Layer
+---------
+[analysis/llm_reasoning.py]
+  • Takes recommendation dict as input
+  • If GROQ_API_KEY set → calls Groq API (llama-3.1-8b-instant)
+  • If no key → falls back to rule-based template (demo mode)
+  • Outputs: 2-3 sentence natural-language business justification
+        |
+        v
+UI Layer
+--------
+[app/streamlit_app.py]
+  • Interactive dashboard (Streamlit, layout=wide)
+  • Sidebar: select category → select SKU
+  • Main panel:
+      ├── Metric row (price, competitor price, margin, elasticity)
+      ├── Line charts (price history + units sold)
+      ├── Styled recommendation callout (raise/lower/hold)
+      └── "Generate AI Justification" button → LLM response card
+
+Data Flow Summary
+-----------------
+
+  [generate_data.py] ──► pricing_data.csv
+          │
+          ▼
+  [elasticity.py] ──► {category: elasticity_coeff}
+          │
+          ▼
+  [recommend.py] ──► {sku_id, direction, suggested_price, change_pct, …}
+          │
+          ▼
+  [llm_reasoning.py] ──► "2-3 sentence justification text"
+          │
+          ▼
+  [streamlit_app.py] ──► Interactive pricing dashboard (localhost:8501)
+
+Technology Stack
+----------------
+  Language    : Python 3.11
+  Data        : pandas, numpy
+  Statistics  : statsmodels (OLS log-log regression)
+  ML          : scikit-learn (optional backup)
+  LLM Client  : openai SDK → Groq endpoint (llama-3.1-8b-instant)
+  UI          : Streamlit 1.x
+  Testing     : pytest
+  Env config  : python-dotenv
+  Deploy      : HuggingFace Spaces (Streamlit SDK)
