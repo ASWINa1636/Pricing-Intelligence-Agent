@@ -63,7 +63,7 @@ pricing-intelligence-agent/
 ### 1. Clone & install
 
 ```bash
-git clone <your-repo-url>
+git clone <Pricing-Intelligence-Agent>
 cd pricing-intelligence-agent
 
 # Create virtual environment (Python 3.11 recommended)
@@ -100,15 +100,6 @@ Visit <http://localhost:8501>.
 
 ---
 
-## Screenshots
-
-![Dashboard overview](docs/screenshot1.png)
-*Add this screenshot after first run.*
-
-![AI Justification card](docs/screenshot2.png)
-*Add this screenshot after generating a justification.*
-
----
 
 ## Elasticity Methodology
 
